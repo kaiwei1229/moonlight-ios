@@ -1,0 +1,43 @@
+name: Build unsigned IPA (portrait)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [portrait]
+
+jobs:
+  ipa:
+    name: Build unsigned iOS IPA
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download iOS platform
+        run: xcodebuild -downloadPlatform iOS
+
+      - name: Build Release (no code signing)
+        run: |
+          xcodebuild -project Moonlight.xcodeproj -scheme "Moonlight" -configuration Release -sdk iphoneos \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            clean build
+
+      - name: Package IPA
+        run: |
+          set -e
+          APP=$(find build/Build/Products -name "Moonlight.app" -maxdepth 3 | head -n 1)
+          echo "app=$APP"
+          plutil -p "$APP/Info.plist" | grep -i -E "Orientation|CFBundleShortVersionString|CFBundleIdentifier" || true
+          mkdir -p out/Payload
+          cp -R "$APP" out/Payload/
+          (cd out && zip -qr ../Moonlight-portrait.ipa Payload)
+          ls -la Moonlight-portrait.ipa
+          shasum -a 256 Moonlight-portrait.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moonlight-portrait-ipa
+          path: Moonlight-portrait.ipa

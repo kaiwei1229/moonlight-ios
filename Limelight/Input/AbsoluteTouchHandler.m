@@ -63,12 +63,9 @@
     // Press the left button down
     LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
     
-    // Start the long press timer
-    longPressTimer = [NSTimer scheduledTimerWithTimeInterval:LONG_PRESS_ACTIVATION_DELAY
-                                                      target:self
-                                                    selector:@selector(onLongPressStart:)
-                                                    userInfo:nil
-                                                     repeats:NO];
+    // Portrait/touch build: a stationary finger must stay a plain left press (no long-press
+    // right-click), otherwise press-and-hold and slow drags in Android games get cancelled.
+    longPressTimer = nil;
     
     lastTouchDown = touch;
     lastTouchDownLocation = touchLocation;
